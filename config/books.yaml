@@ -1,0 +1,64 @@
+# Config file for generating a synthetic book-related knowledge graph.
+# See the function `generate_synthetic.generate_author_graph` to understand
+# what the parameters do.
+
+num-authors:
+  10
+num-books-mean:
+  20
+num-books-std:
+  5
+off-topic-effect-size:
+  2
+off-topic-probability:
+  0.1
+author-popularity-std:
+  40
+sales-std:
+  20
+
+topics:
+  0:
+    name: Cooking
+    popularity: 20.
+  1:
+    name: History
+    popularity: 15.
+  2:
+    name: Philosophy
+    popularity: 7.
+  3:
+    name: Sport
+    popularity: 18.
+  4:
+    name: Science
+    popularity: 16.
+  5:
+    name: Society
+    popularity: 10.
+  6:
+    name: Music
+    popularity: 8.
+
+countries:
+  0:
+    name: United States
+    popularity: 100.
+  1:
+    name: Brasil
+    popularity: 50.
+  2:
+    name: United Kingdom
+    popularity: 75.
+  3:
+    name: China
+    popularity: 60.
+  4:
+    name: France
+    popularity: 35.
+  5:
+    name: Poland
+    popularity: 10.
+  6:
+    name: Argentina
+    popularity: 40.
