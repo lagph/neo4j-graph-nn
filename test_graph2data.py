@@ -1,6 +1,7 @@
 from graph2data import build_pytorch_geometric_data
+from graph_dbs import graph
 import torch
-from py2neo import Node, Relationship, Graph
+from py2neo import Node, Relationship
 
 
 def _mock_node_featurizer(node):
@@ -20,35 +21,39 @@ def _mock_edge_featurizer(relationship):
 def test_build_pytorch_geometric_data():
     bt = Relationship.type("BETTER_THAN")
     wt = Relationship.type("WORSE_THAN")
-    nodes = [Node(flavour="chocolate", niceness=10, id=0),
-             Node(flavour="chocolate", niceness=5, id=1),
-             Node(flavour="vanilla", niceness=8, id=2),
-             Node(flavour="vanilla", niceness=9, id=3)]
+    nodes = [Node("ICE_CREAM", flavour="chocolate", niceness=10, id=0),
+             Node("ICE_CREAM", flavour="chocolate", niceness=5, id=1),
+             Node("ICE_CREAM", flavour="vanilla", niceness=8, id=2),
+             Node("ICE_CREAM", flavour="vanilla", niceness=9, id=3)]
     rels = [bt(nodes[0], nodes[1], id=0),
             wt(nodes[1], nodes[2], id=1),
             bt(nodes[2], nodes[3], id=2),
             wt(nodes[3], nodes[0], id=3)]
-    graph = Graph()
     for node in nodes:
-        graph.create(node)
+        graph._graph.create(node)
     for rel in rels:
-        graph.create(rel)
+        graph._graph.create(rel)
+    try:
+        matches = graph.run("MATCH (n:ICE_CREAM)-[r]->(m) RETURN n, r, m")
 
-    matches = graph.run("MATCH (n)-[r]-(m) RETURN n, r, m")
-
-    data = build_pytorch_geometric_data(matches=matches,
-                                        target_key='niceness',
-                                        node_featurizer=_mock_node_featurizer,
-                                        edge_featrizer=_mock_edge_featurizer)
-    idx_map = {}
-    for idt in range(4):
-        nz = torch.nozero(data.x[:, 2] == idt)
-        assert len(nz) == 1
-        assert nz.item() not in idx_map.values()
-        idx_map[idt] = nz.item()
-    first_edge = torch.nonzero(data.edge_attr[:, 2] == 0).item()
-    assert data.edge_index[first_edge][0] == idx_map[0]
-    assert data.edge_index[first_edge][1] == idx_map[1]
-    last_edge = torch.nonzero(data.edge_attr[:, 2] == 3).item()
-    assert data.edge_index[last_edge][0] == idx_map[0]
-    assert data.edge_index[last_edge][1] == idx_map[1]
+        data = build_pytorch_geometric_data(matches=matches,
+                                            target_key='niceness',
+                                            node_featurizer=_mock_node_featurizer,
+                                            edge_featrizer=_mock_edge_featurizer)
+        idx_map = {}
+        for idt in range(4):
+            nz = torch.nonzero(torch.stack(data.x)[:, 2] == idt)
+            assert len(nz) == 1
+            assert nz.item() not in idx_map.values()
+            idx_map[idt] = nz.item()
+        first_edge = torch.nonzero(torch.stack(data.edge_attr)[:, 2] == 0).item()
+        assert data.edge_index[0][first_edge] == idx_map[0]
+        assert data.edge_index[1][first_edge] == idx_map[1]
+        last_edge = torch.nonzero(torch.stack(data.edge_attr)[:, 2] == 3).item()
+        assert data.edge_index[0][last_edge] == idx_map[3]
+        assert data.edge_index[1][last_edge] == idx_map[0]
+    finally:
+        for node in nodes:
+            graph._graph.delete(node)
+        for rel in rels:
+            graph._graph.delete(rel)

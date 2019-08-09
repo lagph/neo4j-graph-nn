@@ -19,7 +19,7 @@ def build_pytorch_geometric_data(
         num_edges = 0
         for value in match.values():
             if isinstance(value, Node):
-                if value not in node_idx_map.values():
+                if value not in node_idx_map.keys():
                     node_idx_map[value] = current_node_idx
                     current_node_idx += 1
                 edge_idx[num_nodes].append(node_idx_map[value])
@@ -40,7 +40,7 @@ def build_pytorch_geometric_data(
                              "matches must contain at least one Relationship per match, "
                              "but just saw a match that didn't conatin any.")
         # if there's more than one edge between the nodes, create the extra edges
-        for _ in range(num_nodes - 1):
+        for _ in range(num_edges - 1):
             for i in (0, 1):
                 edge_idx[i].append(edge_idx[i][-1])
     edge_attr: List[Union[None, torch.Tensor]] = [None for _ in range(len(edges))]
